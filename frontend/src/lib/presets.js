@@ -12,17 +12,17 @@ export const PRESETS = {
 }
 
 export const TYPE_HELP = {
-  EMAIL: 'name@test.com',
+  EMAIL: 'like name@mail.com',
   PHONE: '10-digit Indian mobile',
-  PAN: 'ABCDE1234F uppercase',
+  PAN: 'LIKE THIS: ABCDE1234F',
   AADHAAR: '12-digit number',
-  CARD: '13–19 digit card, Luhn check',
+  CARD: 'card number with correct check digit',
 }
 
 export const LIMITS = [
-  'Format-only Aadhaar matching can flag number-like identifiers; strict mode uses Verhoeff checksum.',
-  'Lowercase PAN values are not matched (uppercase-only specification).',
-  'Phone detection follows the implemented +91 / 6-9 prefix rules.',
-  'Card detection needs a valid Luhn checksum; debit vs credit share one CARD type (numbers alone cannot distinguish them). CVV/expiry are out of scope — any 3-digit number is too ambiguous.',
-  'Name and regional-language detection are outside this MVP.',
+  'Without strict mode, Aadhaar checking can mistake other long numbers for Aadhaar.',
+  'Small-letter PAN (like abcde1234f) is not caught — only CAPITAL letters.',
+  'Phone checking follows Indian mobile rules (+91, starting with 6–9).',
+  'Cards need the correct check number; wrong ones are ignored. CVV/expiry codes are not covered.',
+  'Names and other languages are not covered yet.',
 ]

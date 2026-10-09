@@ -1,4 +1,4 @@
-# PRD — PII-Guard Middleware (24h Hackathon MVP)
+# PRD — Veil Guard Middleware (24h Hackathon MVP)
 
 ## 1. Problem
 AI agents send user data to external tools via prompts/tool params.

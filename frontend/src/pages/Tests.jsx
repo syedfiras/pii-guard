@@ -37,13 +37,13 @@ export function Tests({ setSuite, notify }) {
   return (
     <>
       <div className="card">
-        <h2>Detection tests</h2>
-        <p className="desc">Runs the bundled presets through the live backend. Full suite: <code>cd backend &amp;&amp; python -m pytest tests/ -q</code> (100 synthetic cases).</p>
+        <h2>Test results</h2>
+        <p className="desc">We run ready-made examples through the checker. Developers can also run the full check: <code>cd backend &amp;&amp; python -m pytest tests/ -q</code> (100 made-up examples).</p>
         <div className="toolbar">
-          <button className="btn primary" onClick={run} disabled={busy}>{busy ? 'Running…' : '▶ Run preset tests'}</button>
+          <button className="btn primary" onClick={run} disabled={busy}>{busy ? 'Running…' : '▶ Run the tests'}</button>
           <label className="toggle" style={{ maxWidth: 340 }}>
             <input type="checkbox" checked={strict} onChange={(e) => setStrict(e.target.checked)} />
-            <span><b>Strict Aadhaar</b><small>Verhoeff checksum on</small></span>
+            <span><b>Strict ID check</b><small>Double-checks ID numbers</small></span>
           </label>
         </div>
         {!rows && !busy && <div className="empty" style={{ marginTop: 12 }}>No runs yet this session.</div>}
@@ -51,10 +51,10 @@ export function Tests({ setSuite, notify }) {
         {rows && (
           <div style={{ overflowX: 'auto' }}>
             <table className="tbl">
-              <thead><tr><th>Case</th><th>Found</th><th>Leak check</th><th>Latency</th><th>Note</th></tr></thead>
+              <thead><tr><th>Example</th><th>Hidden</th><th>Safe?</th><th>Speed</th><th>Note</th></tr></thead>
               <tbody>{rows.map((r) => (
                 <tr key={r.name}><td className="mono">{r.name}</td><td>{r.found}</td>
-                  <td>{r.leak === 'PASS' ? <span className="badge ok">PASS</span> : <span className="badge bad">{r.leak}</span>}</td>
+                  <td>{r.leak === 'PASS' ? <span className="badge ok">safe</span> : <span className="badge bad">not safe</span>}</td>
                   <td className="mono">{typeof r.ms === 'number' ? `${r.ms} ms` : r.ms}</td>
                   <td style={{ color: 'var(--muted)', fontSize: 12 }}>{r.err || '—'}</td></tr>))}
               </tbody>
@@ -63,8 +63,8 @@ export function Tests({ setSuite, notify }) {
         )}
       </div>
       <div className="card" style={{ marginTop: 12 }}>
-        <h2>Known limitations</h2>
-        <p className="desc">Stated honestly — this MVP does not detect every form of personal information.</p>
+        <h2>What it can't do yet</h2>
+        <p className="desc">Said honestly — it can't catch every kind of personal detail.</p>
         <ul className="fails">{LIMITS.map((l) => <li key={l}>{l}</li>)}</ul>
       </div>
     </>

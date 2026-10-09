@@ -1,4 +1,4 @@
-# PII-Guard Middleware — 24h Hackathon MVP
+# Veil Guard Middleware — 24h Hackathon MVP
 AI agent → privacy middleware (detect + tokenize) → simulated tool → restore.
 
 ```
@@ -21,7 +21,10 @@ Set API URL via `frontend/.env`: `VITE_API_URL=http://127.0.0.1:8000` (see `.env
 - `POST /api/agent/chat {message, types?, guard?}` → scripted demo agent; every planned tool call forced through the guard (`guard:false` = bypass contrast mode)
 - `POST /api/restore {text, mapping}`
 - `GET /api/tool-logs` → audit of what the outside tool received
+- `GET /api/evidence` → downloadable evidence file (summary + logs, survives restarts)
 - `GET /api/health`
+
+Audit entries persist to `backend/audit.jsonl` (git-ignored).
 
 ## Test results (synthetic only, 100 cases)
 ```

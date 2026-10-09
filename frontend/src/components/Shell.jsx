@@ -2,11 +2,11 @@ import { I } from './icons'
 
 const NAV = [
   { h: '#overview', label: 'Overview', icon: 'grid' },
-  { h: '#playground', label: 'Redaction Desk', icon: 'flask' },
-  { h: '#agent', label: 'Agent Wiretap', icon: 'send' },
-  { h: '#tests', label: 'Detection Tests', icon: 'list' },
-  { h: '#logs', label: 'Audit Logs', icon: 'pulse' },
-  { h: '#health', label: 'API Health', icon: 'gear' },
+  { h: '#playground', label: 'Check a message', icon: 'flask' },
+  { h: '#agent', label: 'Watch the agent', icon: 'send' },
+  { h: '#tests', label: 'Test results', icon: 'list' },
+  { h: '#logs', label: 'Proof log', icon: 'pulse' },
+  { h: '#health', label: 'Connection', icon: 'gear' },
 ]
 
 export function Sidebar({ route, health }) {
@@ -14,7 +14,7 @@ export function Sidebar({ route, health }) {
     <aside className="sidebar">
       <div className="brand">
         <div className="brand-mark">{I.shield({ width: 19, height: 19 })}</div>
-        <div><b>PII-Guard</b><small>case file no. 001 · mvp</small></div>
+        <div><b>Veil Guard</b><small>privacy demo</small></div>
       </div>
       <nav className="nav" aria-label="Primary">
         {NAV.map((n) => (
@@ -25,8 +25,8 @@ export function Sidebar({ route, health }) {
       </nav>
       <div className="side-foot">
         <div className="pill"><span className={`dot ${health === 'ok' ? 'ok' : health === 'busy' ? 'busy' : 'bad'}`} />
-          {health === 'ok' ? 'Backend connected' : health === 'busy' ? 'Checking backend…' : 'Backend offline'}</div>
-        <div className="pill">{I.lock({ width: 13, height: 13 })} Local demo · synthetic data</div>
+          {health === 'ok' ? 'Checker is running' : health === 'busy' ? 'Checking…' : 'Checker is off'}</div>
+        <div className="pill">{I.lock({ width: 13, height: 13 })} Demo only · fake data</div>
       </div>
     </aside>
   )
@@ -40,10 +40,10 @@ export function Topbar({ title, desc, health, onRetry }) {
         <p>{desc}</p>
       </div>
       <div className="top-right">
-        <span className="tag synth">demo file · synthetic data</span>
-        <span className="tag" title="Backend /api/health">
+        <span className="tag synth">demo · fake data</span>
+        <span className="tag" title="Is the checker program running?">
           <span className={`dot ${health === 'ok' ? 'ok' : health === 'busy' ? 'busy' : 'bad'}`} style={{ display: 'inline-block', marginRight: 6 }} />
-          {health === 'ok' ? 'connected' : health === 'busy' ? 'checking…' : 'disconnected'}
+          {health === 'ok' ? 'running' : health === 'busy' ? 'checking…' : 'off'}
         </span>
         {health !== 'ok' && <button className="btn ghost" onClick={onRetry} style={{ padding: '6px 11px', fontSize: 12 }}>retry</button>}
       </div>

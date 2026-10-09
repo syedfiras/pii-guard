@@ -39,7 +39,7 @@ def _sanitize(params, vault, types):
 
 
 def run_agent(message: str, types, guard: bool, tool_fn):
-    """tool_fn(tool_name, payload) actually delivers to the (simulated) tool."""
+    """tool_fn(tool_name, payload, verdict) delivers to the (simulated) tool."""
     t0 = time.perf_counter()
     calls, user_dets = plan_tools(message, types)
     vault = TokenVault()
@@ -53,7 +53,7 @@ def run_agent(message: str, types, guard: bool, tool_fn):
         else:
             sent, dets, real = params, [], [d.value for d in user_dets]
             leak = "FAIL (bypassed)" if any(r in str(sent) for r in real) else "PASS"
-        resp = tool_fn(tool, sent)
+        resp = tool_fn(tool, sent, leak)
         restored = vault.restore_obj(resp) if guard else resp
         trace.append({
             "tool": tool,

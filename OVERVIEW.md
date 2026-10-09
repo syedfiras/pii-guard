@@ -1,4 +1,4 @@
-# Overview — PII-Guard Middleware
+# Overview — Veil Guard Middleware
 
 Privacy layer between AI agent and external tools: detect PII, send fakes
 out, restore reals back. Web demo + measurable test results. Synthetic data only.
@@ -49,6 +49,7 @@ cd frontend && npm install && npm run dev   # open http://localhost:5173
 - `POST /api/agent/chat {message, types?, guard?}` — guard:false bypasses (contrast demo)
 - `POST /api/restore {text, mapping}`
 - `GET /api/tool-logs` — what the outside tool actually received
+- `GET /api/evidence` — downloadable proof file (persisted `backend/audit.jsonl`)
 - `GET /api/health`
 
 ## Test results (100 synthetic cases)

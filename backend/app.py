@@ -7,10 +7,10 @@ from pydantic import BaseModel
 
 from detectors import detect_all
 from vault import TokenVault
-from fake_tool import simulate_tool, get_logs
+from fake_tool import simulate_tool, get_logs, record_blocked, evidence
 from demo_agent import run_agent
 
-app = FastAPI(title="PII-Guard Middleware")
+app = FastAPI(title="Veil Guard Middleware")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -82,8 +82,9 @@ def invoke(req: InvokeReq):
     flat = str(redacted)
     leak_pass = leak_check(flat, real_values)
     if not leak_pass:
+        record_blocked(req.tool)
         return {"error": "LEAK_DETECTED", "blocked": True}
-    tool_resp = simulate_tool(req.tool, redacted)
+    tool_resp = simulate_tool(req.tool, redacted, "PASS")
     restored = vault.restore_obj(tool_resp)
     ms = round((time.perf_counter() - t0) * 1000, 2)
     return {
@@ -109,9 +110,16 @@ def restore(req: RestoreReq):
 def tool_logs():
     return {"logs": get_logs()}
 
+@app.get("/api/evidence")
+def evidence_pack():
+    """Downloadable evidence: every payload the simulated tool received + summary."""
+    return evidence()
+
 @app.post("/api/agent/chat")
 def agent_chat(req: AgentChatReq):
     if not req.message or not req.message.strip():
         return {"error": "empty message"}
     types = req.types or ["EMAIL", "PHONE", "PAN", "AADHAAR", "CARD"]
-    return {"guard": req.guard, **run_agent(req.message.strip(), types, req.guard, simulate_tool)}
+    def _agent_tool(tool, payload, verdict):
+        return simulate_tool(tool, payload, verdict)
+    return {"guard": req.guard, **run_agent(req.message.strip(), types, req.guard, _agent_tool)}

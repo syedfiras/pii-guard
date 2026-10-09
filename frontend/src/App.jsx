@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { getHealth } from './lib/api'
+import { loadHistory, saveHistory, clearHistory } from './lib/storage'
 import { Sidebar, Topbar, MobileNav, Toasts } from './components/Shell'
 import { Overview } from './pages/Overview'
 import { Playground } from './pages/Playground'
@@ -10,20 +11,20 @@ import { AuditLogs } from './pages/AuditLogs'
 import { ApiHealth } from './pages/ApiHealth'
 
 const TITLES = {
-  '#overview': ['Overview', 'Live protection status, chain of custody and recent activity.'],
-  '#playground': ['Redaction Desk', 'Type a message, redact it, and compare against what the tool saw.'],
-  '#agent': ['Agent Wiretap', 'The agent calls tools behind your back. Watch the wire.'],
-  '#tests': ['Detection Tests', 'Run the bundled demo sample through the live backend.'],
-  '#logs': ['Audit Logs', 'Sanitized payloads the simulated tool received — no originals.'],
-  '#health': ['API Health', 'Backend connection and configuration.'],
+  '#overview': ['Overview', 'See what happened so far — saved on this computer, even after refresh.'],
+  '#playground': ['Check a message', 'Type a message, hide the private parts, and see what the tool got.'],
+  '#agent': ['Watch the agent', 'The agent uses tools by itself. See what it really sent.'],
+  '#tests': ['Test results', 'Run ready-made examples through the live checker.'],
+  '#logs': ['Proof log', 'Cleaned copies the outside tool received — never your real details.'],
+  '#health': ['Connection', 'Is the checker program running?'],
 }
 const tick = () => window.location.hash || '#overview'
 
 export default function App() {
   const [route, setRoute] = useState(tick())
   const [health, setHealth] = useState('busy')
-  const [activity, setActivity] = useState([])
-  const [suite, setSuite] = useState(null)
+  const [activity, setActivity] = useState(() => loadHistory().activity)
+  const [suite, setSuite] = useState(() => loadHistory().suite)
   const [live, setLive] = useState(null)
   const [phase, setPhase] = useState(0)
   const [toasts, setToasts] = useState([])
@@ -47,10 +48,26 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onH)
   }, [check])
 
+  useEffect(() => {
+    saveHistory(activity, suite)
+  }, [activity, suite])
+
   const pushActivity = useCallback((a) => {
-    setActivity((prev) => [...prev.slice(-19), a])
+    setActivity((prev) => [...prev.slice(-29), a])
     setLive(a.ms)
   }, [])
+
+  const deleteRow = useCallback((idx) => {
+    setActivity((prev) => prev.filter((_, i) => i !== idx))
+  }, [])
+
+  const clearAll = useCallback(() => {
+    setActivity([])
+    setSuite(null)
+    setLive(null)
+    clearHistory()
+    notify('History deleted from this computer.', 'ok')
+  }, [notify])
 
   const [title, desc] = TITLES[route] || TITLES['#overview']
 
@@ -61,7 +78,7 @@ export default function App() {
         <Topbar title={title} desc={desc} health={health} onRetry={check} />
         <MobileNav route={route} />
         <div className="content">
-          {route === '#overview' && <Overview activity={activity} suite={suite} live={live} phase={phase} />}
+          {route === '#overview' && <Overview activity={activity} suite={suite} live={live} phase={phase} onDeleteRow={deleteRow} onClearAll={clearAll} />}
           {route === '#playground' && <Playground pushActivity={pushActivity} notify={notify} setPhase={setPhase} />}
           {route === '#agent' && <AgentDemo pushActivity={pushActivity} notify={notify} setPhase={setPhase} />}
           {route === '#tests' && <Tests setSuite={setSuite} notify={notify} />}

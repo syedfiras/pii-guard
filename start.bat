@@ -1,6 +1,6 @@
 @echo off
-echo Starting PII-Guard backend :8000 ...
-start "pii-guard-backend" cmd /k "cd backend && python -m pip install -q -r requirements.txt && python -m uvicorn app:app --port 8000"
+echo Starting Veil Guard backend :8000 ...
+start "veil-guard-backend" cmd /k "cd backend && python -m pip install -q -r requirements.txt && python -m uvicorn app:app --port 8000"
 echo Starting frontend :5173 ...
-start "pii-guard-frontend" cmd /k "cd frontend && npm install && npm run dev"
+start "veil-guard-frontend" cmd /k "cd frontend && npm install && npm run dev"
 echo Open http://localhost:5173

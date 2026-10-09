@@ -5,7 +5,7 @@ export function MappingTable({ mapping, detections }) {
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState('')
   const rows = Object.entries(mapping || {})
-  if (!rows.length) return <div className="empty">No tokens yet — run Protect &amp; Send first.</div>
+  if (!rows.length) return <div className="empty">Nothing here yet — press “Hide privates &amp; send” first.</div>
   const typeOf = (tok) => {
     const d = (detections || []).find((x) => mapping[tok] === x.value)
     if (d) return d.type
@@ -24,20 +24,20 @@ export function MappingTable({ mapping, detections }) {
       <div className="toolbar" style={{ marginBottom: 6 }}>
         <button className="iconbtn" onClick={() => setRevealed((r) => !r)}>
           {revealed ? I.eyeOff({ width: 13, height: 13 }) : I.eye({ width: 13, height: 13 })}
-          {revealed ? ' mask originals' : ' reveal originals'}
+          {revealed ? ' hide real details' : ' show real details'}
         </button>
-        <span style={{ fontSize: 12, color: 'var(--muted)' }}>Local demo vault — not production secret storage.</span>
+        <span style={{ fontSize: 12, color: 'var(--muted)' }}>Saved only in this demo — not a real safe.</span>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table className="tbl">
-          <thead><tr><th>PII type</th><th>Fake token (sent out)</th><th>Original (kept inside)</th><th>Restoration</th></tr></thead>
+          <thead><tr><th>Kind</th><th>Fake (sent out)</th><th>Real (kept here)</th><th>Put back?</th></tr></thead>
           <tbody>
             {rows.map(([tok, real]) => (
               <tr key={tok}>
                 <td><span className={`chip ${typeOf(tok)}`}>{typeOf(tok)}</span></td>
                 <td><code>{tok}</code> <button className="iconbtn" onClick={() => copyTok(tok)}>{copied === tok ? 'copied' : 'copy'}</button></td>
                 <td><code>{revealed ? real : mask(real)}</code></td>
-                <td><span className="badge ok">restorable</span></td>
+                <td><span className="badge ok">yes</span></td>
               </tr>
             ))}
           </tbody>

@@ -33,9 +33,9 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
         restored: guard, ms: d.latency_ms,
       }))
       const bad = (d.trace || []).some((t) => t.leak_check !== 'PASS')
-      notify(bad ? 'Wiretap: real data reached the tool!' : `Agent done — ${(d.trace || []).length} tool call(s) sanitized.`, bad ? 'bad' : 'ok')
+      notify(bad ? 'Warning: the tool saw real details!' : `Done — ${(d.trace || []).length} tool use(s), all with fakes.`, bad ? 'bad' : 'ok')
     } catch (e) {
-      setErr(e.message.includes('Failed to fetch') ? 'Backend unreachable. Start it: cd backend, python -m uvicorn app:app --port 8000' : e.message)
+      setErr(e.message.includes('Failed to fetch') ? 'Checker is off. Run start.bat, or in backend: python -m uvicorn app:app --port 8000' : e.message)
       setPhase(0)
     } finally { setBusy(false) }
   }
@@ -45,14 +45,14 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
   return (
     <>
       <div className="card">
-        <h2>Agent wiretap</h2>
+        <h2>Watch the agent</h2>
         <p className="desc">
-          Talk to the demo bank agent. It calls tools <i>behind your back</i> — the wiretap shows what each
-          tool really received. Scripted agent, simulated tools, synthetic data. Flip the guard off to see the leak happen.
+          Talk to the demo bank helper. It uses tools <i>by itself, without asking you</i> — below you can see
+          what each tool really got. Turn protection off to see what happens without us.
         </p>
         <div className="toolbar" style={{ marginBottom: 10 }}>
           <button className={`guardswitch ${guard ? 'on' : 'off'}`} onClick={() => setGuard((g) => !g)} aria-pressed={guard}>
-            {guard ? 'Guard: ON — calls forced through checkpoint' : 'Guard: OFF — agent calls tools directly'}
+            {guard ? 'Protection: ON — everything passes through us first' : 'Protection: OFF — agent talks to tools directly'}
           </button>
         </div>
         <div className="toolbar" style={{ marginBottom: 10 }}>
@@ -63,10 +63,10 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
           ))}
         </div>
         <div className="chatlog" aria-live="polite">
-          {msgs.length === 0 && <div className="empty">No conversation yet. Pick a case file above or type below.</div>}
+          {msgs.length === 0 && <div className="empty">No chat yet. Tap an example above or type below.</div>}
           {msgs.map((m, i) => (
             <div key={i} className={`bubble ${m.who === 'you' ? 'user' : 'agent'}`}>
-              <span className="who">{m.who === 'you' ? 'you (customer)' : 'agent (scripted demo)'}</span>
+              <span className="who">{m.who === 'you' ? 'you' : 'bank helper (demo)'}</span>
               {m.text}
             </div>
           ))}
@@ -74,7 +74,7 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
         </div>
         <div className="toolbar" style={{ marginTop: 10 }}>
           <input className="search" style={{ flex: 1 }} value={draft} onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && ask()} placeholder="Type as the customer, include personal details…" />
+            onKeyDown={(e) => e.key === 'Enter' && ask()} placeholder="Pretend you are the customer — include phone, card, etc…" />
           <button className="btn primary" onClick={() => ask()} disabled={busy}>{I.send({ width: 14, height: 14 })} Send</button>
         </div>
         {err && <div className="err" style={{ marginTop: 10 }}>{err}</div>}
@@ -82,36 +82,36 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
 
       {last && (
         <div className="card" style={{ marginTop: 12 }}>
-          <h2>Wiretap — intercepted tool calls ({(last.trace || []).length})</h2>
+          <h2>Behind the scenes — what the tools got ({(last.trace || []).length})</h2>
           {leaked
-            ? <div className="verdict bad">Leak on the wire — real data reached the tool<span className="ms">{last.latency_ms} ms</span></div>
-            : <div className="verdict ok">All calls sanitized — tools saw fakes only<span className="ms">{last.latency_ms} ms</span></div>}
+            ? <div className="verdict bad">Leak! Real details reached the tool<span className="ms">{last.latency_ms} ms</span></div>
+            : <div className="verdict ok">Safe — tools only saw fakes<span className="ms">{last.latency_ms} ms</span></div>}
           {(last.trace || []).map((t, i) => (
             <div className="trace" key={i}>
               <header>
-                Call {i + 1} · <span className="mono">{t.tool}</span>
+                Tool use {i + 1} · <span className="mono">{t.tool}</span>
                 <span style={{ marginLeft: 'auto' }}>
-                  {t.leak_check === 'PASS' ? <span className="badge ok">PASS</span> : <span className="badge bad">{t.leak_check}</span>}
+                  {t.leak_check === 'PASS' ? <span className="badge ok">safe</span> : <span className="badge bad">leaked</span>}
                 </span>
               </header>
               <div className="tsec">
-                <h4>Agent tried to send (real)</h4>
+                <h4>Helper tried to send (your real details)</h4>
                 <pre>{toText(t.attempted)}</pre>
               </div>
               <div className="tsec">
-                <h4>Tool actually received {t.leak_check === 'PASS' ? '(fakes)' : '(REAL — leaked)'}</h4>
+                <h4>Tool really got {t.leak_check === 'PASS' ? '(fakes)' : '(REAL — leaked!)'}</h4>
                 <pre>{toText(t.sent)}</pre>
               </div>
               {(t.detections || []).length > 0 && (
                 <div className="tsec">
-                  <h4>Protected in this call</h4>
+                  <h4>Hidden this time</h4>
                   <div className="chips">{t.detections.map((d, j) => <span key={j} className={`chip ${d.type}`}>{d.type} · {d.value}</span>)}</div>
                 </div>
               )}
             </div>
           ))}
           <p className="desc" style={{ marginTop: 10, marginBottom: 0 }}>
-            Guard {last.guard ? 'ON' : 'OFF'} this turn. Bypass mode still uses the simulated tool — it only demonstrates what an unguarded agent would hand over.
+            Protection was {last.guard ? 'ON' : 'OFF'} for this chat. OFF still uses the pretend tool — it only shows what would happen with no protection.
           </p>
         </div>
       )}
