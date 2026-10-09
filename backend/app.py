@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from detectors import detect_all
 from vault import TokenVault
 from fake_tool import simulate_tool, get_logs
+from demo_agent import run_agent
 
 app = FastAPI(title="PII-Guard Middleware")
 app.add_middleware(
@@ -23,13 +24,19 @@ class InvokeReq(BaseModel):
     payload: Any
     types: Optional[list[str]] = None
     aadhaar_strict: bool = False  # False = format-only (demo friendly), True = Verhoeff
+    card_strict: bool = True  # True = require Luhn checksum (recommended)
 
 class RestoreReq(BaseModel):
     text: str
     mapping: Optional[dict[str, str]] = None
 
-def sanitize_text(text: str, vault: TokenVault, types, aadhaar_strict):
-    dets = detect_all(text, tuple(types), aadhaar_strict=aadhaar_strict)
+class AgentChatReq(BaseModel):
+    message: str
+    types: Optional[list[str]] = None
+    guard: bool = True  # False = bypass contrast mode (simulated tool still)
+
+def sanitize_text(text: str, vault: TokenVault, types, aadhaar_strict, card_strict=True):
+    dets = detect_all(text, tuple(types), aadhaar_strict=aadhaar_strict, card_strict=card_strict)
     # replace from end -> start so offsets stay valid
     redacted = text
     for d in sorted(dets, key=lambda x: x.start, reverse=True):
@@ -37,20 +44,20 @@ def sanitize_text(text: str, vault: TokenVault, types, aadhaar_strict):
         redacted = redacted[:d.start] + tok + redacted[d.end:]
     return redacted, dets
 
-def sanitize_obj(obj: Any, vault: TokenVault, types, aadhaar_strict):
+def sanitize_obj(obj: Any, vault: TokenVault, types, aadhaar_strict, card_strict=True):
     if isinstance(obj, str):
-        return sanitize_text(obj, vault, types, aadhaar_strict)
+        return sanitize_text(obj, vault, types, aadhaar_strict, card_strict)
     if isinstance(obj, dict):
         out, all_dets = {}, []
         for k, v in obj.items():
-            rv, dets = sanitize_obj(v, vault, types, aadhaar_strict)
+            rv, dets = sanitize_obj(v, vault, types, aadhaar_strict, card_strict)
             out[k] = rv
             all_dets += dets
         return out, all_dets
     if isinstance(obj, list):
         out_list, all_dets = [], []
         for v in obj:
-            rv, dets = sanitize_obj(v, vault, types, aadhaar_strict)
+            rv, dets = sanitize_obj(v, vault, types, aadhaar_strict, card_strict)
             out_list.append(rv)
             all_dets += dets
         return out_list, all_dets
@@ -67,9 +74,9 @@ def health():
 @app.post("/api/invoke")
 def invoke(req: InvokeReq):
     t0 = time.perf_counter()
-    types = req.types or ["EMAIL", "PHONE", "PAN", "AADHAAR"]
+    types = req.types or ["EMAIL", "PHONE", "PAN", "AADHAAR", "CARD"]
     vault = TokenVault()
-    redacted, dets = sanitize_obj(req.payload, vault, types, req.aadhaar_strict)
+    redacted, dets = sanitize_obj(req.payload, vault, types, req.aadhaar_strict, req.card_strict)
     real_values = [d.value for d in dets]
     # fail-closed second scan: ensure no real value survived
     flat = str(redacted)
@@ -101,3 +108,10 @@ def restore(req: RestoreReq):
 @app.get("/api/tool-logs")
 def tool_logs():
     return {"logs": get_logs()}
+
+@app.post("/api/agent/chat")
+def agent_chat(req: AgentChatReq):
+    if not req.message or not req.message.strip():
+        return {"error": "empty message"}
+    types = req.types or ["EMAIL", "PHONE", "PAN", "AADHAAR", "CARD"]
+    return {"guard": req.guard, **run_agent(req.message.strip(), types, req.guard, simulate_tool)}
