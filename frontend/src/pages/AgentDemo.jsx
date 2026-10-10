@@ -15,6 +15,7 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
   const [busy, setBusy] = useState(false)
   const [last, setLast] = useState(null)
   const [err, setErr] = useState('')
+  const [sid, setSid] = useState(null) // same fake names reused across this chat
 
   const ask = async (text) => {
     const q = (text ?? draft).trim()
@@ -22,8 +23,9 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
     setDraft(''); setErr(''); setBusy(true); setPhase(1)
     setMsgs((m) => [...m, { who: 'you', text: q }])
     try {
-      const d = await agentChat(q, guard)
+      const d = await agentChat(q, guard, sid)
       if (d.error) throw new Error(d.error)
+      if (d.session_id) setSid(d.session_id)
       setMsgs((m) => [...m, { who: 'agent', text: d.reply }])
       setLast(d); setPhase(2)
       ;(d.trace || []).forEach((t) => pushActivity({
@@ -47,8 +49,7 @@ export function AgentDemo({ pushActivity, notify, setPhase }) {
       <div className="card">
         <h2>Watch the agent</h2>
         <p className="desc">
-          Talk to the demo bank helper. It uses tools <i>by itself, without asking you</i> — below you can see
-          what each tool really got. Turn protection off to see what happens without us.
+          Chat with the demo bank helper. It uses tools on its own — see below what each tool really got.
         </p>
         <div className="toolbar" style={{ marginBottom: 10 }}>
           <button className={`guardswitch ${guard ? 'on' : 'off'}`} onClick={() => setGuard((g) => !g)} aria-pressed={guard}>

@@ -1,4 +1,4 @@
-"""Quick sanity checks for the 4 PII types (synthetic data only)."""
+"""Quick sanity checks for the core PII types (synthetic data only)."""
 from detectors import detect_all
 from vault import TokenVault
 

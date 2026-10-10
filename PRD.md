@@ -11,7 +11,8 @@ the simulated external tool.
 
 ## 2. Goals
 - Intercept agent → tool payloads (structured JSON + natural-language text).
-- Detect 5 PII types: EMAIL, PHONE-IN, PAN, AADHAAR, CARD (debit/credit).
+- Detect PII: 5 ID types (EMAIL, PHONE-IN, PAN, AADHAAR, CARD) by rules+checksums,
+  plus UPI/passport/dates and Presidio NER names/places, all gated by `policy.yaml`.
 - Replace real values with format-preserving reversible tokens.
 - Guarantee 0 real protected PII reaches the simulated tool (fail-closed).
 - Restore tokens to originals in tool responses.
@@ -39,7 +40,9 @@ the simulated external tool.
    in strict mode, CARD 13–19 digits + Luhn checksum (debit and credit
    share one type — numbers alone cannot distinguish them),
    overlap resolution (longest wins).
-3. Vault (`backend/vault.py`): in-memory `{token: real}` with fakes
+3. Vault (`backend/vault.py`): AES-sealed random tokens in session vaults
+   (masked display, audited reveal, wipe + rotation); optional FF3 mode. See
+   README §6 for the layer list, with fakes
    `user_0001@redacted.test`, `+91-00000-00001`, `QWERT0001Z`,
    `2999-8888-0001`, brand-preserving Luhn-valid test card numbers.
    Longest-first restore.

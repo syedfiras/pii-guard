@@ -9,18 +9,36 @@ async function req(path, opts) {
 export const apiBase = API
 export const getHealth = () => req('/api/health')
 export const getLogs = () => req('/api/tool-logs')
-export function invoke(payload, types, aadhaarStrict) {
+export const getChain = () => req('/api/chain')
+export const getPolicy = () => req('/api/policy')
+export const reloadPolicy = () => req('/api/policy/reload', { method: 'POST' })
+export const rotateKey = () => req('/api/vault/rotate', { method: 'POST' })
+export function invoke(payload, types, aadhaarStrict, sessionId) {
   return req('/api/invoke', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tool: 'send_sms', payload, types, aadhaar_strict: aadhaarStrict }),
+    body: JSON.stringify({ tool: 'send_sms', payload, types, aadhaar_strict: aadhaarStrict, session_id: sessionId || null }),
   })
 }
-export function agentChat(message, guard) {
+export function agentChat(message, guard, sessionId) {
   return req('/api/agent/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, guard }),
+    body: JSON.stringify({ message, guard, session_id: sessionId || null }),
+  })
+}
+export function revealTokens(sessionId, tokens) {
+  return req('/api/vault/reveal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, tokens }),
+  })
+}
+export function wipeVault(sessionId) {
+  return req('/api/vault/wipe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId || null }),
   })
 }
 
@@ -34,7 +52,7 @@ export function toText(payload) {
 /** Count fake tokens in a sanitized payload string (vault formats). */
 export function countTokens(s) {
   if (!s) return 0
-  const pats = [/user_\d+__@redacted\.test/g, /\+91-00000-\d+/g, /QWERT\d+Z/g, /2999-8888-\d+/g, /(?:4111|5555|6011)(?: \d{4}){3}|3782 \d{6} \d{5}/g]
+  const pats = [/[a-z0-9-]+@redacted\.test/g, /\+91-0\d{4}-\d{5}/g, /QWERT\d{4}[A-Z]/g, /2999-8888-\d{4}/g, /(?:4111|5555|6011)(?: \d{4}){3}|3782 \d{6} \d{5}/g]
   let n = 0
   pats.forEach((p) => { n += (s.match(p) || []).length })
   return n

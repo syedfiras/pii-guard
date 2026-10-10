@@ -11,12 +11,12 @@ import { AuditLogs } from './pages/AuditLogs'
 import { ApiHealth } from './pages/ApiHealth'
 
 const TITLES = {
-  '#overview': ['Overview', 'See what happened so far — saved on this computer, even after refresh.'],
-  '#playground': ['Check a message', 'Type a message, hide the private parts, and see what the tool got.'],
-  '#agent': ['Watch the agent', 'The agent uses tools by itself. See what it really sent.'],
-  '#tests': ['Test results', 'Run ready-made examples through the live checker.'],
-  '#logs': ['Proof log', 'Cleaned copies the outside tool received — never your real details.'],
-  '#health': ['Connection', 'Is the checker program running?'],
+  '#overview': ['Overview', 'Your protection at a glance.'],
+  '#playground': ['Check a message', 'See what gets hidden before anything is sent.'],
+  '#agent': ['Watch the agent', 'See what the helper really sends to its tools.'],
+  '#tests': ['Test results', 'Ready-made examples, checked live.'],
+  '#logs': ['Proof log', 'Copies of what outside tools received.'],
+  '#health': ['Connection', 'Status, rules and controls.'],
 }
 const tick = () => window.location.hash || '#overview'
 

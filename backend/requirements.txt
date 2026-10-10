@@ -2,3 +2,9 @@ fastapi==0.143.0
 uvicorn==0.54.0
 pydantic==2.14.0
 pytest==8.3.4
+cryptography==50.0.2
+presidio-analyzer==2.2.364
+spacy==3.8.16
+ff3==1.0.3
+pyyaml==6.0.3
+# spaCy NER model (download once): python -m spacy download en_core_web_sm

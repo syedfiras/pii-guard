@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { invoke, toText } from '../lib/api'
-import { PRESETS, TYPE_HELP } from '../lib/presets'
+import { useEffect, useState } from 'react'
+import { invoke, toText, getPolicy } from '../lib/api'
+import { PRESETS, TYPE_HELP, ALL_KINDS } from '../lib/presets'
 import { I } from '../components/icons'
 import { PrivacyPipeline } from '../components/PrivacyPipeline'
 import { ComparisonPanel } from '../components/ComparisonPanel'
@@ -9,14 +9,25 @@ import { MappingTable } from '../components/MappingTable'
 export function Playground({ pushActivity, notify, setPhase }) {
   const [input, setInput] = useState(PRESETS.all.text)
   const [format, setFormat] = useState('text')
-  const [types, setTypes] = useState(['EMAIL', 'PHONE', 'PAN', 'AADHAAR', 'CARD'])
+  const [kinds, setKinds] = useState(ALL_KINDS)
+  const [types, setTypes] = useState(ALL_KINDS)
   const [strict, setStrict] = useState(false)
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
   const [res, setRes] = useState(null)
   const [original, setOriginal] = useState('')
+  const [sid, setSid] = useState(null)
 
   const toggle = (t) => setTypes((p) => p.includes(t) ? p.filter((x) => x !== t) : [...p, t])
+
+  useEffect(() => {
+    getPolicy().then((p) => {
+      const on = Object.entries(p.types || {}).filter(([, c]) => c.enabled !== false).map(([t]) => t)
+      const list = on.length ? on : ALL_KINDS
+      setKinds(list)
+      setTypes((prev) => prev.filter((t) => list.includes(t)))
+    }).catch(() => { /* offline: keep built-in list */ })
+  }, [])
 
   const send = async () => {
     const text = input.trim()
@@ -28,8 +39,9 @@ export function Playground({ pushActivity, notify, setPhase }) {
     } else payload = { text }
     setLoading(true); setErr(''); setPhase(1)
     try {
-      const data = await invoke(payload, types, strict)
+      const data = await invoke(payload, types, strict, sid)
       if (data.blocked || data.error) throw new Error(data.error || 'Request blocked by leak check.')
+      if (data.session_id) setSid(data.session_id)
       const orig = format === 'json' ? JSON.stringify(payload, null, 2) : payload.text
       setOriginal(orig); setRes(data); setPhase(2)
       const dets = data.detections || []
@@ -53,7 +65,7 @@ export function Playground({ pushActivity, notify, setPhase }) {
       <div className="grid2" style={{ marginTop: 12 }}>
         <div className="card">
           <h2>Your message</h2>
-          <p className="desc">What you type here is only shown to you. <span className="badge warn">fake data only</span></p>
+          <p className="desc">Only you see this. <span className="badge warn">fake data only</span></p>
           <div className="toolbar" style={{ marginBottom: 10 }}>
             <div className="presets">
               {Object.entries(PRESETS).map(([k, v]) => (
@@ -70,10 +82,10 @@ export function Playground({ pushActivity, notify, setPhase }) {
           <textarea className="editor" rows={5} value={input} onChange={(e) => setInput(e.target.value)}
             placeholder={format === 'json' ? '{"message": "Call Ravi at 9876543210"}' : 'Example: Contact user_0001@example.test at +91-98765-43210 regarding verification.'} />
           <div className="toggles" style={{ marginTop: 10 }}>
-            {Object.entries(TYPE_HELP).map(([t, h]) => (
-              <label key={t} className="toggle" title={h}>
+            {kinds.map((t) => (
+              <label key={t} className="toggle" title={TYPE_HELP[t] || t}>
                 <input type="checkbox" checked={types.includes(t)} onChange={() => toggle(t)} />
-                <span><b>{t}</b><small>{h}</small></span>
+                <span><b>{t}</b><small>{TYPE_HELP[t] || ''}</small></span>
               </label>
             ))}
           </div>
@@ -89,7 +101,7 @@ export function Playground({ pushActivity, notify, setPhase }) {
 
         <div className="card">
           <h2>What we found</h2>
-          <p className="desc">These came from the checker program — nothing typed by hand.</p>
+          <p className="desc">Private details found in your message.</p>
           {!res && !loading && <div className="empty">Press “Hide privates &amp; send” to see what is found.</div>}
           {loading && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}><div className="skel" /><div className="skel" /><div className="skel" /></div>}
           {res && (
@@ -114,7 +126,7 @@ export function Playground({ pushActivity, notify, setPhase }) {
 
       <div className="card" style={{ marginTop: 12 }}>
         <h2>Side by side</h2>
-        <p className="desc">Your message, what the tool got, and what you got back — all from the live checker.</p>
+        <p className="desc">The three versions, side by side.</p>
         {!res && <div className="empty">Three boxes appear here after it runs.</div>}
         {res && (
           <div className="grid3">
@@ -131,8 +143,8 @@ export function Playground({ pushActivity, notify, setPhase }) {
       {res && (
         <div className="card" style={{ marginTop: 12 }}>
           <h2>What replaced what</h2>
-          <p className="desc">Kept only in this demo. Real details are hidden unless you press show.</p>
-          <MappingTable mapping={res.mapping} detections={dets} />
+          <p className="desc">Fakes on the left. Real details stay hidden until you press show.</p>
+          <MappingTable mapping={res.mapping} detections={dets} sessionId={sid} notify={notify} />
         </div>
       )}
     </>

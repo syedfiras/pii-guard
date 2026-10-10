@@ -20,9 +20,12 @@ tool response (tokens) -> RESTORE -> agent/user`.
 
 - `backend/app.py` — routes (`/api/invoke`, `/api/agent/chat`, `/api/restore`,
   `/api/tool-logs`, `/api/health`), recursive `sanitize_obj`, fail-closed `leak_check`.
-- `backend/detectors.py` — 5 detectors (EMAIL/PHONE/PAN/AADHAAR/CARD) + `detect_all()`.
-- `backend/vault.py` — `TokenVault` with format-preserving fakes + restore.
-- `backend/fake_tool.py` — `simulate_tool()` + `TOOL_LOG` audit.
+- `backend/detectors.py` — 10 detectors (EMAIL/PHONE/PAN/AADHAAR/CARD/UPI_ID/PASSPORT_IN/DATE + PERSON/LOCATION via NER).
+- `backend/ner.py` — optional Presidio + spaCy layer (graceful fallback to rules).
+- `backend/policy.yaml` + `policy.py` — rulebook: enables, thresholds, per-tool deny lists, hot-reload.
+- `backend/vault.py` — sealed/random vault, session isolation, FPE mode, rotation.
+- `backend/fake_tool.py` — `simulate_tool()` + hash-chained `TOOL_LOG` audit.
+- `backend/sdk.py` — `@protect` decorator for serverless use.
 - `backend/demo_agent.py` — scripted agent; every planned call forced through the guard.
 - `backend/tests/generate_synthetic.py` — seeded 100-case generator (no real PII).
 - `backend/tests/test_basic.py`, `test_metrics.py` — sanity + P/R/leak/restore/perf.
@@ -39,9 +42,10 @@ start.bat
 ```
 Or manually:
 ```
-cd backend && pip install -r requirements.txt && python -m uvicorn app:app --port 8000
+cd backend && pip install -r requirements.txt && python -m spacy download en_core_web_sm && python -m uvicorn app:app --port 8000
 cd frontend && npm install && npm run dev   # open http://localhost:5173
 ```
+Or everything at once: `docker compose up --build` (needs Docker; NER models fetch during build).
 
 ## API
 
@@ -55,7 +59,7 @@ cd frontend && npm install && npm run dev   # open http://localhost:5173
 ## Test results (100 synthetic cases)
 
 ```
-pytest tests/ -> 2 passed
+pytest tests/ -> 13 passed (detection + audit + vault layers)
 detection=100.0% leaks=0 restore=100/100 avg_ms=0.04 p95_ms=0.10
 EMAIL / PHONE / PAN / AADHAAR / CARD: P=1.00 R=1.00
 ```

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { getLogs, toText, countTokens, apiBase } from '../lib/api'
+import { getLogs, getChain, toText, countTokens, apiBase } from '../lib/api'
 import { I } from '../components/icons'
 
 /** Audit log shows SANITIZED payloads only — never originals or vault mapping. */
 export function AuditLogs({ notify }) {
   const [logs, setLogs] = useState(null)
+  const [chain, setChain] = useState(null)
   const [busy, setBusy] = useState(false)
   const [q, setQ] = useState('')
   const [f, setF] = useState('all')
@@ -26,8 +27,8 @@ export function AuditLogs({ notify }) {
       a.download = 'veil-guard-evidence.json'
       a.click()
       URL.revokeObjectURL(a.href)
-      notify('Evidence file downloaded.', 'ok')
-    } catch { notify('Could not download evidence.', 'bad') }
+      notify('Proof file saved to your downloads.', 'ok')
+    } catch { notify('Could not save the proof file.', 'bad') }
   }
   useEffect(() => {
     let on = true
@@ -35,6 +36,7 @@ export function AuditLogs({ notify }) {
     getLogs().then((d) => { if (on) setLogs(d) })
       .catch(() => { if (on) { notify('Could not reach the checker.', 'bad'); setLogs({ logs: [] }) } })
       .finally(() => { if (on) setBusy(false) })
+    getChain().then((c) => { if (on) setChain(c) }).catch(() => { /* offline */ })
     return () => { on = false }
   }, [])
 
@@ -49,6 +51,13 @@ export function AuditLogs({ notify }) {
     <div className="card">
         <h2>Proof log</h2>
         <p className="desc">What the outside tool got — cleaned copies only. Your real details never appear here.</p>
+        {chain && (
+          <p className="desc">
+            {chain.intact
+              ? <span className="badge ok">ledger intact · {chain.entries} entries chained</span>
+              : <span className="badge bad">ledger broken at entry {chain.bad_index}</span>}
+          </p>
+        )}
       <div className="toolbar">
         <span style={{ position: 'relative' }}>
           <input className="search" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} style={{ paddingLeft: 30 }} />

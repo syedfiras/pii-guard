@@ -149,6 +149,11 @@
 .chip.PAN { border-left: 4px solid #6d28d9; }
 .chip.AADHAAR { border-left: 4px solid #be185d; }
 .chip.CARD { border-left: 4px solid #0e7490; }
+.chip.UPI_ID { border-left: 4px solid #047857; }
+.chip.PASSPORT_IN { border-left: 4px solid #7c2d12; }
+.chip.DATE { border-left: 4px solid #57534e; }
+.chip.PERSON { border-left: 4px solid #9d174d; }
+.chip.LOCATION { border-left: 4px solid #1d4ed8; }
 
 .panel { border: 1px solid var(--ink); border-radius: var(--radius); overflow: hidden; background: #fff; }
 .panel header {

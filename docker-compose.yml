@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - veil-audit:/data
+    environment:
+      # Set a stable key to keep vault mappings across restarts, or omit
+      # for a fresh key (old fakes become unrestorable) on every boot.
+      # VEIL_VAULT_KEY: "<urlsafe-base64-32-bytes>"
+      VEIL_TOKEN_MODE: map
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  veil-audit:

@@ -1,5 +1,6 @@
-"""PII detectors for 5 types: EMAIL, PHONE-IN, PAN, AADHAAR, CARD.
-Pure regex + checksum. No network. Deterministic for hackathon judging.
+"""PII detectors for 8 types: EMAIL, PHONE-IN, PAN, AADHAAR, CARD,
+UPI_ID, PASSPORT_IN, DATE — plus optional Presidio NER (PERSON/LOCATION).
+Pure regex + checksum core. No network. Deterministic for hackathon judging.
 Works on free text and (via app.py) recursively on JSON.
 """
 import re
@@ -14,6 +15,15 @@ AADHAAR_RE = re.compile(r'\b[2-9]\d{3}[\s\-]?\d{4}[\s\-]?\d{4}\b')
 # Card (debit/credit): 13-19 digits with optional spaces/dashes. Luhn checked separately.
 # Debit vs credit cannot be distinguished by number format alone — one CARD type.
 CARD_RE = re.compile(r'\b(?:\d[\s\-]?){13,19}\b')
+# UPI: handle@bank with known Indian bank/app suffixes (keeps emails for EMAIL).
+_UPI_BANKS = ("okhdfcbank|okicici|okaxis|oksbi|okhdfc|aubank|idfcbank|jupiteraxis|"
+              "fbl|dbl|ubi|citi|hsbc|rbl|yesbank|kotak|indus|bandhan|federal|"
+              "canara|unionbank|pnb|bob|hdfc|icici|axis|sbi|ybl|paytm|upi")
+UPI_RE = re.compile(r'\b[\w.\-]{2,}@(?:' + _UPI_BANKS + r')\b', re.IGNORECASE)
+# Indian passport: 1 letter + 7 digits.
+PASSPORT_RE = re.compile(r'\b[A-Z][0-9]{7}\b')
+# Calendar date DD/MM/YYYY (or with - .) — DOB/address-proof context.
+DATE_RE = re.compile(r'\b(?:0?[1-9]|[12]\d|3[01])[/\-.](?:0?[1-9]|1[0-2])[/\-.](?:19|20)\d{2}\b')
 
 # Verhoeff tables for Aadhaar checksum validation
 _D = [
@@ -138,7 +148,33 @@ def detect_card(text: str, strict=True):
         out.append(Detection("CARD", raw, m.start(), m.start() + len(raw)))
     return out
 
-def detect_all(text: str, types=("EMAIL", "PHONE", "PAN", "AADHAAR", "CARD"), aadhaar_strict=True, card_strict=True):
+def detect_upi(text: str):
+    return [Detection("UPI_ID", m.group(), m.start(), m.end()) for m in UPI_RE.finditer(text)]
+
+def detect_passport(text: str):
+    return [Detection("PASSPORT_IN", m.group(), m.start(), m.end()) for m in PASSPORT_RE.finditer(text)]
+
+def detect_date(text: str):
+    return [Detection("DATE", m.group(), m.start(), m.end()) for m in DATE_RE.finditer(text)]
+
+def detect_ner(text: str, want=(), thresholds=None):
+    """Presidio NER for PERSON/LOCATION/DATE. Empty list if unavailable."""
+    if not want:
+        return []
+    try:
+        from ner import analyze
+    except Exception:
+        return []
+    return [Detection(d["type"], d["value"], d["start"], d["end"])
+            for d in analyze(text, thresholds)
+            if d["type"] in want]
+
+ALL_TYPES = ("EMAIL", "PHONE", "PAN", "AADHAAR", "CARD",
+             "UPI_ID", "PASSPORT_IN", "DATE", "PERSON", "LOCATION")
+NER_TYPES = ("PERSON", "LOCATION")
+
+def detect_all(text: str, types=ALL_TYPES, aadhaar_strict=True, card_strict=True,
+               ner=True, ner_thresholds=None):
     """Run selected detectors. Returns non-overlapping detections sorted by start."""
     found: list[Detection] = []
     if "EMAIL" in types:
@@ -156,6 +192,18 @@ def detect_all(text: str, types=("EMAIL", "PHONE", "PAN", "AADHAAR", "CARD"), aa
                       if len(_digits_only(m.group())) == 12 and len(set(_digits_only(m.group()))) > 1]
     if "CARD" in types:
         found += detect_card(text, strict=card_strict)
+    if "UPI_ID" in types:
+        found += detect_upi(text)
+    if "PASSPORT_IN" in types:
+        found += detect_passport(text)
+    if "DATE" in types:
+        found += detect_date(text)
+    if ner:
+        want = [t for t in NER_TYPES if t in types]
+        # local DATE regex already covers machine dates; NER adds human ones
+        if "DATE" in types and "DATE" not in want:
+            want = want + ["DATE"]
+        found += detect_ner(text, want, ner_thresholds)
     # resolve overlaps: keep longest match first
     found.sort(key=lambda d: (d.start, -(d.end - d.start)))
     picked, occupied = [], set()

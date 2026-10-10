@@ -15,7 +15,7 @@ export function Tests({ setSuite, notify }) {
     const lat = []
     for (const c of cases) {
       try {
-        const d = await invoke({ text: c.text }, ['EMAIL', 'PHONE', 'PAN', 'AADHAAR', 'CARD'], strict)
+        const d = await invoke({ text: c.text }, null, strict)
         const dets = d.detections || []
         const leaked = dets.some((x) => JSON.stringify(d.tool_saw).includes(x.value))
         found += dets.length
@@ -38,7 +38,7 @@ export function Tests({ setSuite, notify }) {
     <>
       <div className="card">
         <h2>Test results</h2>
-        <p className="desc">We run ready-made examples through the checker. Developers can also run the full check: <code>cd backend &amp;&amp; python -m pytest tests/ -q</code> (100 made-up examples).</p>
+        <p className="desc">Ready-made examples, checked right now.</p>
         <div className="toolbar">
           <button className="btn primary" onClick={run} disabled={busy}>{busy ? 'Running…' : '▶ Run the tests'}</button>
           <label className="toggle" style={{ maxWidth: 340 }}>

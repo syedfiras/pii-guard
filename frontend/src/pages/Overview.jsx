@@ -24,7 +24,7 @@ export function Overview({ activity, suite, live, phase, onDeleteRow, onClearAll
 
       <div className="card" style={{ marginTop: 12 }}>
         <h2>How your data travels</h2>
-        <p className="desc">Outside tools only get the fake copy — never your real message. The steps light up only during a real check.</p>
+        <p className="desc">Outside tools only get the fake copy.</p>
         <PrivacyPipeline phase={phase} leak={activity[activity.length - 1]?.leak} />
         <div className="legend">
           <span><i style={{ background: 'var(--ink)' }} />hidden original</span>
@@ -46,7 +46,6 @@ export function Overview({ activity, suite, live, phase, onDeleteRow, onClearAll
               : <button className="btn ghost" style={{ marginLeft: 'auto', padding: '5px 12px', fontSize: 12.5 }} onClick={() => setConfirming(true)}>Delete history</button>
           )}
         </div>
-        <p className="desc">Saved on this computer only — it stays even after refresh. Only counts are saved, never your messages.</p>
         {runs === 0
           ? <div className="empty">Nothing here yet. Open <a href="#agent">Watch the agent</a> or <a href="#playground">Check a message</a> and run something.</div>
           : <div style={{ overflowX: 'auto' }}><table className="tbl">

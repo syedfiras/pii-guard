@@ -1,0 +1,56 @@
+# Veil Guard policy — the product's rulebook. Edit + POST /api/policy/reload.
+# action: tokenize (default) | block (refuse any payload containing the type)
+version: 1
+
+defaults:
+  action: tokenize
+  aadhaar_strict: false
+  card_strict: true
+  ner: true
+
+types:
+  EMAIL:
+    enabled: true
+    action: tokenize
+  PHONE:
+    enabled: true
+    action: tokenize
+  PAN:
+    enabled: true
+    action: tokenize
+  AADHAAR:
+    enabled: true
+    action: tokenize
+  CARD:
+    enabled: true
+    action: tokenize
+  UPI_ID:
+    enabled: true
+    action: tokenize
+  PASSPORT_IN:
+    enabled: true
+    action: tokenize
+  DATE:
+    enabled: true
+    action: tokenize
+  PERSON:
+    enabled: true
+    action: tokenize
+    min_score: 0.60
+  LOCATION:
+    enabled: false
+    action: tokenize
+    min_score: 0.65
+
+# Per-tool deny rules: a payload containing a denied type is BLOCKED outright
+# (fail-closed), e.g. card numbers must never reach the analytics warehouse.
+tools:
+  send_sms:
+    deny: []
+  lookup_account:
+    deny: []
+  analytics_export:
+    deny:
+      - CARD
+      - AADHAAR
+      - PAN
